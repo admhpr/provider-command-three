@@ -1,0 +1,21 @@
+{
+  "name": "provider-command-three",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@types/node": "^20.2.1",
+    "@types/three": "^0.152.0",
+    "ts-node": "^10.9.1",
+    "typescript": "^5.0.4",
+    "vite": "^4.3.8"
+  },
+  "dependencies": {
+    "three": "^0.152.2"
+  }
+}
