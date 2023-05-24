@@ -1,5 +1,8 @@
 import * as THREE from "three";
 
+interface DataProvider<T> {
+  fetchData(): Promise<T>;
+}
 interface Command {
   execute(scene: THREE.Scene): void;
   update: () => void;
@@ -7,33 +10,59 @@ interface Command {
   redo(scene: THREE.Scene): void;
 }
 
+interface CubeAttributes {
+  position: [number, number, number];
+  size: number;
+  color: string;
+}
+
+class CubeDataProvider implements DataProvider<CubeAttributes> {
+  async fetchData(): Promise<CubeAttributes> {
+    // Simulating data retrieval delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    const cubeData: CubeAttributes = {
+      position: [0, 0, -5],
+      size: 2,
+      color: 'blue'
+    };
+    return cubeData;
+  }
+}
 class AddCubeCommand implements Command {
   private cube: THREE.Mesh | null = null;
-  private position: THREE.Vector3 | null = null;
+  private cubeDataProvider: DataProvider<CubeAttributes>;
 
-  constructor({ position }: { position: THREE.Vector3 }) {
-    this.position = position;
+  constructor(cubeDataProvider: DataProvider<CubeAttributes>) {
+    this.cubeDataProvider = cubeDataProvider;
   }
 
   async execute(scene: THREE.Scene): Promise<void> {
     await this.setup(scene);
   }
   async setup(scene: THREE.Scene) {
-    const geometry = new THREE.BoxGeometry(1, 1, 1);
-    const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+    const cubeData = await this.cubeDataProvider.fetchData();
+    this.create(cubeData);
+    scene.add(this.cube!);
+    
+  }
+  create(cubeData: CubeAttributes){
+    const { position: [x, y, z], size, color} = cubeData
+    const geometry = new THREE.BoxGeometry(size, size, size);
+    const material = new THREE.MeshBasicMaterial({ color });
     this.cube = new THREE.Mesh(geometry, material);
-    this.cube.position.copy(this.position!);
+    this.cube.position.copy(new THREE.Vector3(x, y, z));
     this.cube.rotation.x = 0;
     this.cube.rotation.y = 0;
     this.cube.rotation.z = 0;
-    scene.add(this.cube!);
   }
   update(): void {
     const rotationSpeed = 0.01;
     const updateRotation = () => {
-      this.cube!.rotation.x += rotationSpeed;
-      this.cube!.rotation.y += rotationSpeed;
-      this.cube!.rotation.z += rotationSpeed;
+      if(this.cube){
+        this.cube.rotation.x += rotationSpeed;
+        this.cube.rotation.y += rotationSpeed;
+        this.cube.rotation.z += rotationSpeed;
+      }
     };
     updateRotation();
   }
@@ -125,33 +154,6 @@ class CommandInvoker {
     }
   }
 }
-// const scene = new THREE.Scene();
-// const camera = new THREE.PerspectiveCamera(
-//   75,
-//   window.innerWidth / window.innerHeight,
-//   0.1,
-//   1000
-// );
-// const renderer = new THREE.WebGLRenderer();
-// renderer.setSize(window.innerWidth, window.innerHeight);
-// document.body.appendChild(renderer.domElement);
-
-// const commandInvoker = new CommandInvoker();
-
-// const addCubeCommand = new AddCubeCommand({
-//   position: new THREE.Vector3(0, 0, -5),
-// });
-// commandInvoker.executeCommand(addCubeCommand, scene);
-
-// const addTorusCommand = new AddTorusCommand({ position: new THREE.Vector3(2, 0, -5) });
-// commandInvoker.executeCommand(addTorusCommand, scene);
-
-// function animate() {
-//   requestAnimationFrame(animate);
-//   renderer.render(scene, camera);
-// }
-
-// animate();
 
 
 class SceneController {
@@ -224,7 +226,7 @@ class SceneController {
   const sceneController = new SceneController();
 
 // Add commands to the scene controller
-const addCubeCommand = new AddCubeCommand({ position: new THREE.Vector3(0, 0, -5) });
+const addCubeCommand = new AddCubeCommand(new CubeDataProvider());
 const addTorusCommand = new AddTorusCommand({ position: new THREE.Vector3(2, 0, -5) });
 
 sceneController.addCommand(addCubeCommand);
