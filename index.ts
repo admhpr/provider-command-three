@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import { AddCubeCommand, CubeDataProvider } from "./cube";
 import { AddTorusCommand } from "./torus";
+import { EventBridge, CanvasEventListener } from "./events";
 
 export interface DataProvider<T> {
   fetchData(): Promise<T>;
@@ -13,11 +14,11 @@ export interface Command {
 }
 class SceneController {
     private scene: THREE.Scene;
-    private renderer: THREE.WebGLRenderer;
     private camera: THREE.PerspectiveCamera;
     private commands: Command[];
     private animationRequestId: number | null;
-  
+    
+    public renderer: THREE.WebGLRenderer;
     constructor() {
       this.scene = new THREE.Scene();
       this.renderer = new THREE.WebGLRenderer();
@@ -78,7 +79,8 @@ class SceneController {
       }
   }
   
-  const sceneController = new SceneController();
+const eventBridge = new EventBridge();
+const sceneController = new SceneController();
 
 // Add commands to the scene controller
 const addCubeCommand = new AddCubeCommand(new CubeDataProvider());
@@ -88,6 +90,9 @@ sceneController.addCommand(addCubeCommand);
 sceneController.addCommand(addTorusCommand);
 
 await sceneController.setup();
+const canvas = sceneController.renderer.domElement;
+const canvasEventListener = new CanvasEventListener(canvas, eventBridge);
+canvasEventListener.setupEventListeners();
 sceneController.animate();
 
 // Stop the animation loop (if needed)
